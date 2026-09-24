@@ -38,7 +38,7 @@ export function getFerramentaExterna(slug: string): FerramentaExterna | undefine
 // Até existir a tabela `pilar_ferramentas` no banco, a URL que o usuário
 // configura pela interface (Ferramentas → Planilhas → Configurar) fica só no
 // navegador dele — mesmo padrão usado em lib/useTheme.ts/usePinnedPanel.ts.
-// Trocar por uma chamada Supabase aqui é a única mudança que os componentes
+// Trocar por uma Server Function em lib/db/ aqui é a única mudança que os componentes
 // que consomem este arquivo vão precisar (eles não sabem de onde vem a URL).
 
 function chaveStorage(slug: string): string {

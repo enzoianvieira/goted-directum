@@ -1,16 +1,25 @@
 # GOTED — Plataforma (MVP)
 
-MVP navegável da plataforma GOTED: Next.js (App Router) + TypeScript, sem
-backend — toda a interface funciona com dados mockados.
+MVP navegável da plataforma GOTED: Next.js (App Router) + TypeScript +
+PostgreSQL 16. Parte das telas já lê/grava no banco; o restante ainda usa
+dados mockados.
 
 ## Rodando localmente
 
+Pré-requisitos: Node 20+ e Docker (ou um PostgreSQL 16 acessível).
+
 ```bash
+docker compose up -d          # sobe o PostgreSQL 16 na porta 5433 e aplica db/schema.sql + db/seed.sql
+cp .env.example .env.local    # DATABASE_URL apontando para o container
 npm install
 npm run dev
 ```
 
 Abra http://localhost:3000 (redireciona para `/inicio/mentoria-map`).
+
+Para usar outro PostgreSQL (ex.: o do servidor), aplique `db/schema.sql` e
+`db/seed.sql` nele com `psql` (ou pelo pgAdmin, Query Tool) e ajuste
+`DATABASE_URL` no `.env.local`.
 
 ## Estrutura
 
@@ -22,13 +31,17 @@ Abra http://localhost:3000 (redireciona para `/inicio/mentoria-map`).
   métrica, badge, barra de progresso, estado vazio).
 - `lib/types.ts` — tipos do domínio (pensados para multi-tenant: organização,
   usuário, papel, pilar).
-- `lib/tenant.ts` — organização/usuário "atuais", mockados. É aqui que a
-  autenticação real (Supabase Auth) vai entrar futuramente.
+- `lib/tenant.ts` — organização/usuário "atuais", mockados (demo). Futuramente
+  virão da sessão do usuário logado.
 - `lib/mock-data.ts` — todos os dados fictícios usados nas telas.
-- `db/schema.sql` — schema PostgreSQL, já aplicado ao schema `goted` do
-  projeto Supabase "dioptria-lab" (`vuxwlthdeekxojktcxwg`). RLS habilitado em
-  todas as tabelas, sem políticas ainda (fechado por padrão). O código do
-  Next.js ainda não tem client Supabase — continua usando `lib/mock-data.ts`.
+- `lib/db/` — acesso ao PostgreSQL com `pg` (node-postgres), sempre no
+  servidor: `pool.ts` (conexão via `DATABASE_URL`), `queries.ts` (Horizonte,
+  OKR, Auto Scanner) e `auth.ts` (login e-mail/senha com bcrypt + sessão em
+  cookie httpOnly). Os arquivos são `"use server"`, então páginas de cliente
+  chamam as funções diretamente como Server Functions.
+- `db/schema.sql` — schema `goted` (tabelas, enums). `db/seed.sql` — organização
+  e usuário de demonstração (IDs de `lib/tenant.ts`).
+- `docker-compose.yml` — PostgreSQL 16 local para desenvolvimento.
 
 ## O que é só demonstrativo
 

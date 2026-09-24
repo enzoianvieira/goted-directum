@@ -1,22 +1,21 @@
 -- ============================================================================
--- GOTED — Schema (PostgreSQL / Supabase)
+-- GOTED — Schema (PostgreSQL 16)
 -- ============================================================================
--- Este schema já foi aplicado ao projeto Supabase "dioptria-lab"
--- (vuxwlthdeekxojktcxwg), dentro do schema `goted` — isolado dos demais
--- schemas do projeto (public, pessoalmapp, valor-ativo etc. pertencem a
--- outras aplicações que compartilham o mesmo projeto).
+-- Tudo fica dentro do schema `goted`. Aplicado automaticamente pelo
+-- docker-compose.yml na primeira subida do container (junto com db/seed.sql);
+-- em outro servidor, rode com: psql "$DATABASE_URL" -f db/schema.sql
 --
--- A aplicação (app/) já usa supabase-js para Horizonte, OKR e Auth (e-mail/
--- senha) — ver lib/supabase/. O restante das telas (Auto/Pro Scanner, Rota
--- GOTED, Copiloto) ainda usa dados mockados/locais. Este arquivo documenta o
--- banco já criado, servindo de referência para o que falta integrar.
+-- A aplicação (app/) acessa o banco com node-postgres (`pg`) a partir do
+-- servidor — ver lib/db/. Horizonte, OKR, resultado do Auto Scanner e login
+-- (e-mail/senha, tabelas users/sessions) já usam o banco. O restante das telas
+-- (Pro Scanner, Rota GOTED, Copiloto) ainda usa dados mockados/locais.
 --
--- A seção "PROPOSTA — ainda não aplicada" no fim deste arquivo documenta
--- tabelas desenhadas mas NÃO criadas no Supabase (ver lib/scanner/ para a
--- lógica equivalente já implementada no front, hoje com dados locais).
+-- As seções "PROPOSTA" no fim deste arquivo documentam tabelas desenhadas mas
+-- ainda NÃO usadas pela aplicação (ver lib/scanner/ e lib/ferramentas-externas.ts
+-- para a lógica equivalente, hoje com dados locais).
 --
--- Convém rodar este arquivo novamente do zero apenas em outro projeto/ambiente
--- (ex: staging). No projeto atual, use migrations incrementais a partir daqui.
+-- Rode este arquivo do zero só em banco novo. Em banco existente, use
+-- migrations incrementais a partir daqui.
 -- ============================================================================
 
 create schema if not exists goted;
@@ -52,18 +51,29 @@ create table goted.organizations (
   segmento text,
   created_at timestamptz not null default now()
 );
-alter table goted.organizations enable row level security;
 
 -- ─── Usuários ───────────────────────────────────────────────────────────────
--- Em produção, id deve corresponder a auth.users(id) do Supabase Auth.
+-- password_hash: bcrypt, gerado em lib/db/auth.ts. Nulo = usuário sem login
+-- próprio (ex: cadastrado por um consultor e ainda sem senha definida).
 
 create table goted.users (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   email text not null unique,
+  password_hash text,
   created_at timestamptz not null default now()
 );
-alter table goted.users enable row level security;
+
+-- Sessões de login. O cookie do navegador guarda um token opaco; aqui fica só
+-- o hash SHA-256 dele (vazar esta tabela não permite sequestrar sessões).
+
+create table goted.sessions (
+  token_hash text primary key,
+  user_id uuid not null references goted.users (id) on delete cascade,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index sessions_user_id_idx on goted.sessions (user_id);
 
 -- Vínculo entre usuários e organizações (um usuário pode pertencer/atender a
 -- mais de uma organização, ex: consultor com várias empresas atribuídas).
@@ -75,7 +85,6 @@ create table goted.organization_members (
   created_at timestamptz not null default now(),
   primary key (organization_id, user_id)
 );
-alter table goted.organization_members enable row level security;
 
 -- ─── Scanners (Auto Scanner e Pro Scanner) ─────────────────────────────────
 
@@ -86,7 +95,6 @@ create table goted.scanners (
   conducted_by uuid references goted.users (id), -- consultor responsável, quando tipo = 'pro'
   created_at timestamptz not null default now()
 );
-alter table goted.scanners enable row level security;
 
 -- Respostas brutas do questionário (Auto Scanner) ou da entrevista (Pro Scanner).
 
@@ -99,7 +107,6 @@ create table goted.scanner_respostas (
   observacao text,
   created_at timestamptz not null default now()
 );
-alter table goted.scanner_respostas enable row level security;
 
 -- Resultado consolidado por pilar (o cálculo em si fica fora do banco, no
 -- futuro algoritmo de diagnóstico).
@@ -111,7 +118,6 @@ create table goted.scanner_resultados_pilar (
   pontuacao numeric(5, 2) not null,
   unique (scanner_id, pilar)
 );
-alter table goted.scanner_resultados_pilar enable row level security;
 
 -- ─── Destino: Horizonte ─────────────────────────────────────────────────────
 
@@ -123,7 +129,6 @@ create table goted.horizontes (
   updated_at timestamptz not null default now(),
   unique (organization_id, ano)
 );
-alter table goted.horizontes enable row level security;
 
 -- ─── Destino: OKRs ──────────────────────────────────────────────────────────
 
@@ -133,7 +138,6 @@ create table goted.objetivos (
   titulo text not null,
   created_at timestamptz not null default now()
 );
-alter table goted.objetivos enable row level security;
 
 create table goted.resultados_chave (
   id uuid primary key default gen_random_uuid(),
@@ -145,7 +149,6 @@ create table goted.resultados_chave (
   prazo text,
   created_at timestamptz not null default now()
 );
-alter table goted.resultados_chave enable row level security;
 
 -- ─── Rota GOTED: priorização e progresso ───────────────────────────────────
 
@@ -158,7 +161,6 @@ create table goted.roadmap_itens (
   status goted.roadmap_status not null default 'planejado',
   unique (organization_id, pilar)
 );
-alter table goted.roadmap_itens enable row level security;
 
 create table goted.jornada_progresso (
   organization_id uuid primary key references goted.organizations (id) on delete cascade,
@@ -166,7 +168,6 @@ create table goted.jornada_progresso (
   progresso_percentual numeric(5, 2) not null default 0,
   updated_at timestamptz not null default now()
 );
-alter table goted.jornada_progresso enable row level security;
 
 -- ─── Conteúdo dos pilares (lógica GPS: Guia / Projeto / Solução) ───────────
 -- Conteúdo institucional do Método GOTED, não pertence a nenhuma organização.
@@ -180,7 +181,6 @@ create table goted.pilar_conteudos (
   ordem integer not null default 0,
   created_at timestamptz not null default now()
 );
-alter table goted.pilar_conteudos enable row level security;
 
 -- ─── Atividades e acompanhamento da mentoria ───────────────────────────────
 
@@ -195,7 +195,6 @@ create table goted.atividades (
   created_by uuid references goted.users (id),
   created_at timestamptz not null default now()
 );
-alter table goted.atividades enable row level security;
 
 create table goted.sessoes_mentoria (
   id uuid primary key default gen_random_uuid(),
@@ -204,23 +203,17 @@ create table goted.sessoes_mentoria (
   data timestamptz not null default now(),
   notas text
 );
-alter table goted.sessoes_mentoria enable row level security;
 
 -- ============================================================================
 -- Observações para a evolução futura:
 --
--- 1. RLS: todas as tabelas têm RLS habilitado mas SEM políticas ainda — ou
---    seja, hoje só o service_role (que ignora RLS) consegue ler/escrever.
---    Isso é intencional (fecha tudo por padrão) até existir autenticação real.
---    Quando o Supabase Auth for adicionado, cada tabela com organization_id
---    precisa de políticas baseadas em uma função tipo
---    current_user_organization_ids() (o usuário só enxerga linhas das
---    organizações às quais pertence/atende).
+-- 1. Isolamento por organização: hoje é responsabilidade da aplicação (toda
+--    query em lib/db/queries.ts filtra por organization_id). Se o banco for
+--    acessado por outros clientes, considerar Row Level Security com uma
+--    função tipo current_user_organization_ids().
 --
--- 2. O schema `goted` não está na lista de schemas expostos pela Data API por
---    padrão — hoje só é acessível via service_role (backend) ou pelo SQL
---    Editor do Supabase. Se for exposto via REST/Data API no futuro, revisar
---    as políticas de RLS antes.
+-- 2. Sessões expiradas não são apagadas automaticamente — agendar um
+--    `delete from goted.sessions where expires_at < now()` (cron/pg_cron).
 --
 -- 3. admin_goted: não precisa de tabela própria — é apenas um valor de
 --    organization_members.role (ou uma tabela separada goted_admins, se o
@@ -234,12 +227,12 @@ alter table goted.sessoes_mentoria enable row level security;
 
 
 -- ============================================================================
--- PROPOSTA — ainda não aplicada ao Supabase
+-- PROPOSTA — ainda não usada pela aplicação
 -- ============================================================================
 -- Escala de maturidade por marchas (N, 1ª a 5ª), hoje implementada apenas no
 -- front-end com dados locais — ver lib/scanner/marcha.ts, perguntas.ts e
 -- resultado.ts. As tabelas abaixo documentam como isso viraria persistência
--- real; nada aqui foi rodado no banco ainda.
+-- real; a aplicação ainda não lê nem grava nestas tabelas.
 --
 -- Resumo da migração quando for feita:
 --   1. Criar goted.scanner_perguntas (banco de perguntas por scanner_tipo/
@@ -279,8 +272,7 @@ create table goted.scanner_perguntas (
   descricao_5 text,
   created_at timestamptz not null default now()
 );
--- alter table goted.scanner_perguntas enable row level security;
--- (conteúdo institucional, sem organization_id — mesma lógica de
+-- -- (conteúdo institucional, sem organization_id — mesma lógica de
 -- goted.pilar_conteudos: leitura pública, escrita só por admin GOTED)
 
 create table goted.scanner_resultados_subpilar (
@@ -291,12 +283,11 @@ create table goted.scanner_resultados_subpilar (
   valor numeric(4, 2), -- null = subpilar não aplicável (todas as respostas N)
   unique (scanner_id, subpilar_id)
 );
--- alter table goted.scanner_resultados_subpilar enable row level security;
--- ============================================================================
+-- -- ============================================================================
 
 
 -- ============================================================================
--- PROPOSTA — ainda não aplicada ao Supabase
+-- PROPOSTA — ainda não usada pela aplicação
 -- ============================================================================
 -- Ferramentas externas (ex.: Google Sheets embutido via iframe) acessadas
 -- inteiramente pelo módulo Ferramentas → Planilhas (/ferramentas/planilhas e
@@ -315,7 +306,7 @@ create table goted.scanner_resultados_subpilar (
 --      mesma ferramenta, ex. "fluxo-de-caixa", pode ter URLs diferentes por
 --      organização — cada empresa-cliente com sua própria planilha).
 --   2. lib/ferramentas-externas.ts troca a leitura/escrita em localStorage
---      por uma query/mutação Supabase (`select/update ...
+--      por uma query/mutação em lib/db/ (`select/update ...
 --      goted.pilar_ferramentas where organization_id = $1`) — os componentes
 --      que consomem esse arquivo (a lista e a página [slug]) não mudam, só a
 --      fonte da URL.
@@ -324,7 +315,7 @@ create table goted.scanner_resultados_subpilar (
 --      para dashboards/Copiloto — ver anotações no chat/PRD), external_url
 --      passa a ser preenchido automaticamente após o fluxo de OAuth +
 --      provisionamento, em vez de configurado manualmente pelo usuário.
---   4. RLS: mesma lógica das demais tabelas com organization_id — só quem
+--   4. Acesso: mesma lógica das demais tabelas com organization_id — só quem
 --      pertence/atende a organização enxerga/edita sua própria linha.
 -- ============================================================================
 
@@ -345,5 +336,4 @@ create table goted.pilar_ferramentas (
   updated_at timestamptz not null default now(),
   unique (organization_id, pilar, slug)
 );
--- alter table goted.pilar_ferramentas enable row level security;
--- ============================================================================
+-- -- ============================================================================

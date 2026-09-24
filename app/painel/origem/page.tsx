@@ -1,11 +1,11 @@
 import { Gauge } from "@/components/ui/Gauge";
 import { PanelHead } from "@/components/ui/PanelHead";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { fetchUltimoResultadoAutoScanner } from "@/lib/supabase/queries";
+import { fetchUltimoResultadoAutoScanner } from "@/lib/db/queries";
 import { CURRENT_ORGANIZATION } from "@/lib/tenant";
 import { getPilar } from "@/lib/pilares";
 
-// Lê dados ao vivo do Supabase a cada request — nunca deve virar página estática.
+// Lê dados ao vivo do PostgreSQL a cada request — nunca deve virar página estática.
 export const dynamic = "force-dynamic";
 
 export default async function PainelOrigemPage() {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { PanelHead } from "@/components/ui/PanelHead";
 import { Tabs } from "@/components/ui/Tabs";
-import { fetchHorizontes, salvarHorizonte } from "@/lib/supabase/queries";
+import { fetchHorizontes, salvarHorizonte } from "@/lib/db/queries";
 import { CURRENT_ORGANIZATION } from "@/lib/tenant";
 import type { HorizonteAno } from "@/lib/types";
 

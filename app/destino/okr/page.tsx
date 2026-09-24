@@ -10,7 +10,7 @@ import {
   criarObjetivo,
   criarResultadoChave,
   fetchObjetivosComKrs,
-} from "@/lib/supabase/queries";
+} from "@/lib/db/queries";
 import { CURRENT_ORGANIZATION } from "@/lib/tenant";
 import type { Objetivo } from "@/lib/types";
 

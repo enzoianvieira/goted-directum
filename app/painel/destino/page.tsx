@@ -2,11 +2,11 @@ import { Metric } from "@/components/ui/Metric";
 import { PanelHead } from "@/components/ui/PanelHead";
 import { Progress } from "@/components/ui/Progress";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { fetchHorizontes, fetchObjetivosComKrs } from "@/lib/supabase/queries";
+import { fetchHorizontes, fetchObjetivosComKrs } from "@/lib/db/queries";
 import { CURRENT_ORGANIZATION } from "@/lib/tenant";
 import type { KeyResult } from "@/lib/types";
 
-// Lê dados ao vivo do Supabase a cada request — nunca deve virar página estática.
+// Lê dados ao vivo do PostgreSQL a cada request — nunca deve virar página estática.
 export const dynamic = "force-dynamic";
 
 // Indicador pode ser "quanto maior, melhor" (ex: margem) ou "quanto menor,

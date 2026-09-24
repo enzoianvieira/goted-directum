@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { LogoFull } from "@/components/ui/Logo";
-import { createClient } from "@/lib/supabase/browser";
+import { criarConta, entrar, getSessaoAtual } from "@/lib/db/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,9 +15,8 @@ export default function LoginPage() {
   const [mensagem, setMensagem] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.replace("/");
+    getSessaoAtual().then((sessao) => {
+      if (sessao) router.replace("/");
     });
   }, [router]);
 
@@ -26,32 +25,19 @@ export default function LoginPage() {
     setErro(null);
     setMensagem(null);
     setCarregando(true);
-    const supabase = createClient();
 
-    if (modo === "entrar") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-      if (error) {
-        setErro(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
+    try {
+      const { erro } = modo === "entrar" ? await entrar(email, senha) : await criarConta(email, senha);
+      if (erro) {
+        setErro(erro);
         setCarregando(false);
         return;
       }
       router.replace("/");
-      return;
-    }
-
-    // modo === "criar-conta"
-    const { data, error } = await supabase.auth.signUp({ email, password: senha });
-    if (error) {
-      setErro(error.message);
+    } catch {
+      setErro("Não foi possível conectar ao servidor. Tente novamente.");
       setCarregando(false);
-      return;
     }
-    if (data.session) {
-      router.replace("/");
-      return;
-    }
-    setMensagem("Conta criada! Confira seu e-mail para confirmar o acesso antes de entrar.");
-    setCarregando(false);
   }
 
   return (

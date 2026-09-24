@@ -1,0 +1,30 @@
+# PostgreSQL 16 local para desenvolvimento (mesma versão major do servidor).
+# Na primeira subida (volume vazio) o container aplica db/schema.sql e
+# db/seed.sql automaticamente. Para recriar o banco do zero:
+#   docker compose down -v && docker compose up -d
+#
+# Porta 5433 no host para não colidir com um PostgreSQL já instalado na 5432.
+
+services:
+  db:
+    image: postgres:16
+    container_name: goted-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: goted
+      POSTGRES_USER: goted
+      POSTGRES_PASSWORD: goted
+    ports:
+      - "5433:5432"
+    volumes:
+      - goted-pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goted -d goted"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  goted-pgdata:

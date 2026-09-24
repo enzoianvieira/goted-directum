@@ -4,37 +4,30 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, LogOut } from "lucide-react";
 import { PanelHead } from "@/components/ui/PanelHead";
-import { createClient } from "@/lib/supabase/browser";
-import type { User } from "@supabase/supabase-js";
+import { getSessaoAtual, sair as encerrarSessao, type SessaoUsuario } from "@/lib/db/auth";
 
 export function SessionCard() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessaoUsuario | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [saindo, setSaindo] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setCarregando(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
+    getSessaoAtual()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setCarregando(false));
   }, []);
 
   async function sair() {
     setSaindo(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await encerrarSessao();
     router.push("/login");
   }
 
   return (
     <section className="panel">
-      <PanelHead title="Sessão" action="Supabase Auth" />
+      <PanelHead title="Sessão" action="PostgreSQL" />
       <div className="panel-body" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         {carregando ? (
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Verificando sessão...</span>

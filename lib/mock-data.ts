@@ -8,7 +8,7 @@ import type {
 import { CURRENT_ORGANIZATION, CURRENT_USER } from "./tenant";
 
 // Todos os dados abaixo são fictícios, apenas para demonstrar a experiência.
-// Futuramente virão do banco (Supabase/PostgreSQL), sempre filtrados por organizationId.
+// Futuramente virão do banco (PostgreSQL, via lib/db/), sempre filtrados por organizationId.
 
 // Usuários vinculados à organização atual — futuramente virá de
 // organization_members (ver db/schema.sql), incluindo consultores e

@@ -9,7 +9,7 @@ import { CURRENT_ORGANIZATION, CURRENT_USER } from "@/lib/tenant";
 import { LogoFull, LogoMark } from "@/components/ui/Logo";
 import { ThemeProvider, useThemeContext } from "@/lib/theme-context";
 import { usePinnedPanel } from "@/lib/usePinnedPanel";
-import { createClient } from "@/lib/supabase/browser";
+import { sair } from "@/lib/db/auth";
 
 function useActiveModule(pathname: string): NavModule | undefined {
   const segment = pathname.split("/")[1] ?? "";
@@ -43,8 +43,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const panelVisible = pinned || hovering;
 
   async function sairParaLogin() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await sair();
     router.push("/login");
   }
 

@@ -1,9 +1,9 @@
 import type { Organization, User } from "./types";
 
 // Simulação do "tenant atual" enquanto não existe autenticação real.
-// Os IDs abaixo correspondem à organização/usuário semeados no Supabase
-// (schema `goted`, ver db/schema.sql) — hoje fixos, futuramente virão da
-// sessão do usuário logado (Supabase Auth).
+// Os IDs abaixo correspondem à organização/usuário semeados no PostgreSQL
+// (schema `goted`, ver db/seed.sql) — hoje fixos, futuramente virão da
+// sessão do usuário logado (ver lib/db/auth.ts).
 
 export const CURRENT_ORGANIZATION: Organization = {
   id: "00000000-0000-4000-8000-000000000001",
