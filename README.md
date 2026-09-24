@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GOTED — Plataforma (MVP)
 
-## Getting Started
+MVP navegável da plataforma GOTED: Next.js (App Router) + TypeScript, sem
+backend — toda a interface funciona com dados mockados.
 
-First, run the development server:
+## Rodando localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra http://localhost:3000 (redireciona para `/inicio/mentoria-map`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Estrutura
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/` — rotas (App Router). Cada módulo do menu lateral (Início, Painel,
+  Origem, Destino, Rota GOTED, Copiloto) tem sua própria pasta com submenus.
+- `components/layout/AppShell.tsx` — casca da aplicação (rail + painel de
+  submódulos + topo), monta o menu a partir de `lib/nav.ts`.
+- `components/ui/` — componentes de interface reutilizáveis (painel, aba,
+  métrica, badge, barra de progresso, estado vazio).
+- `lib/types.ts` — tipos do domínio (pensados para multi-tenant: organização,
+  usuário, papel, pilar).
+- `lib/tenant.ts` — organização/usuário "atuais", mockados. É aqui que a
+  autenticação real (Supabase Auth) vai entrar futuramente.
+- `lib/mock-data.ts` — todos os dados fictícios usados nas telas.
+- `db/schema.sql` — schema PostgreSQL, já aplicado ao schema `goted` do
+  projeto Supabase "dioptria-lab" (`vuxwlthdeekxojktcxwg`). RLS habilitado em
+  todas as tabelas, sem políticas ainda (fechado por padrão). O código do
+  Next.js ainda não tem client Supabase — continua usando `lib/mock-data.ts`.
 
-## Learn More
+## O que é só demonstrativo
 
-To learn more about Next.js, take a look at the following resources:
+Auto Scanner, Pro Scanner, OKR, Horizonte, Roadmap e Copiloto têm apenas a
+interface pronta — os cálculos, algoritmos e a inteligência do Copiloto ainda
+não existem. Isso é intencional: o objetivo deste MVP é validar navegação,
+identidade visual e organização das telas antes de construir as regras de
+negócio.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Identidade visual
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Paleta e tipografia seguem o Manual de Marca GOTED (`design-system/Manual de
+marca Goted Final.pdf`, na raiz do repositório): azul-marinho `#12233F`,
+petróleo `#176B78`, areia `#F5F3EE`, Montserrat para títulos. A organização do
+layout (rail + painel de submódulos) se inspira na referência de UX da DRZ
+(`design-system/`), sem reaproveitar textos ou elementos proprietários dela.
